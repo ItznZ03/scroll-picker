@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ancient Scroll Name Picker</title>
+  <!-- Google Font for an ancient/biblical aesthetic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+
+  <style>
+    /* Transparent background for Canva embedding */
+    html, body {
+      background-color: transparent !important;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Cinzel', serif;
+      overflow: hidden;
+    }
+
+    .picker-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Masked Scroll Window with Soft Vertical Edges */
+    .scroll-window {
+      position: relative;
+      width: 280px;
+      height: 60px; /* Heights 1 single name cleanly */
+      overflow: hidden;
+      
+      /* Soft gradient mask fading top and bottom edges */
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 1) 25%,
+        rgba(0, 0, 0, 1) 75%,
+        rgba(0, 0, 0, 0) 100%
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 1) 25%,
+        rgba(0, 0, 0, 1) 75%,
+        rgba(0, 0, 0, 0) 100%
+      );
+    }
+
+    /* Vertical rolling list container */
+    .scroll-track {
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      transition: transform 0.05s linear;
+    }
+
+    /* Individual rolled item */
+    .name-item {
+      height: 60px;
+      line-height: 60px;
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #3b2314; /* Deep parchment brown */
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: 1px 1px 2px rgba(255, 245, 220, 0.5);
+      box-sizing: border-box;
+      white-space: nowrap;
+    }
+
+    /* Ancient/Biblical Parchment Buttons */
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      background: linear-gradient(180deg, #5c3a21 0%, #3b2314 100%);
+      color: #f4e8c1;
+      border: 1px solid #2a180c;
+      border-radius: 4px;
+      padding: 6px 16px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.4);
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+    }
+
+    .btn:hover {
+      background: linear-gradient(180deg, #744a2b 0%, #4a2c19 100%);
+      transform: translateY(-1px);
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn:disabled {
+      background: #7a7a7a;
+      border-color: #555555;
+      color: #cccccc;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .counter {
+      font-size: 0.75rem;
+      color: #3b2314;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="picker-wrapper">
+    <!-- Masked Center Scroll Viewport -->
+    <div class="scroll-window">
+      <div id="scrollTrack" class="scroll-track">
+        <div class="name-item">ROLL</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="button-group">
+      <button id="pickBtn" class="btn" onclick="rollPicker()">Pick</button>
+      <button id="resetBtn" class="btn" onclick="resetPicker()">Reset</button>
+    </div>
+
+    <div id="counterDisplay" class="counter"></div>
+  </div>
+
+  <script>
+    // EDIT YOUR NAMES HERE:
+    const initialNames = [
+      "Gideon",
+      "Fela",
+      "David",
+      "Sarah",
+      "Abraham",
+      "Moses",
+      "Esther",
+      "Daniel"
+    ];
+
+    let availableNames = [...initialNames];
+    let isRolling = false;
+
+    const track = document.getElementById('scrollTrack');
+    const pickBtn = document.getElementById('pickBtn');
+    const counterEl = document.getElementById('counterDisplay');
+
+    function updateCounter() {
+      counterEl.textContent = `${availableNames.length} / ${initialNames.length} REMAINING`;
+    }
+
+    function rollPicker() {
+      if (isRolling || availableNames.length === 0) return;
+
+      isRolling = true;
+      pickBtn.disabled = true;
+
+      // Select winning index from available list
+      const selectedIndex = Math.floor(Math.random() * availableNames.length);
+      const winner = availableNames[selectedIndex];
+
+      // Build rolling sequence for continuous slot animation
+      const rollSequence = [];
+      const totalSpins = 25; // Number of items that roll past
+      
+      for (let i = 0; i < totalSpins; i++) {
+        const randomName = availableNames[Math.floor(Math.random() * availableNames.length)];
+        rollSequence.push(randomName);
+      }
+      rollSequence.push(winner); // Winning name lands at the bottom position
+
+      // Populate track HTML
+      track.innerHTML = rollSequence
+        .map(name => `<div class="name-item">${name}</div>`)
+        .join('');
+
+      // Reset animation position instantly
+      track.style.transition = 'none';
+      track.style.transform = 'translateY(0px)';
+
+      // Trigger vertical rolling motion
+      setTimeout(() => {
+        const itemHeight = 60;
+        const targetOffset = -(rollSequence.length - 1) * itemHeight;
+        
+        track.style.transition = 'transform 2.5s cubic-bezier(0.15, 0.85, 0.35, 1)';
+        track.style.transform = `translateY(${targetOffset}px)`;
+      }, 50);
+
+      // On finish rolling: remove picked name from pool
+      setTimeout(() => {
+        availableNames.splice(selectedIndex, 1);
+        updateCounter();
+
+        if (availableNames.length > 0) {
+          pickBtn.disabled = false;
+        } else {
+          // If all picked, show ending state on track
+          setTimeout(() => {
+            track.innerHTML = `<div class="name-item">ALL PICKED</div>`;
+            track.style.transition = 'none';
+            track.style.transform = 'translateY(0px)';
+          }, 1000);
+        }
+
+        isRolling = false;
+      }, 2600);
+    }
+
+    function resetPicker() {
+      if (isRolling) return;
+      availableNames = [...initialNames];
+      track.style.transition = 'none';
+      track.style.transform = 'translateY(0px)';
+      track.innerHTML = `<div class="name-item">ROLL</div>`;
+      pickBtn.disabled = false;
+      updateCounter();
+    }
+
+    updateCounter();
+  </script>
+
+</body>
+</html>
